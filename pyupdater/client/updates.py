@@ -163,6 +163,9 @@ class Restarter(object):
             self._restart()
 
     def _restart(self):
+        # set permissions on the app before restarting
+        # this is necessary because zip doesnt retain permissions on linux
+        os.chmod(self.current_app, 0o755)
         os.execl(self.current_app, self.name)
 
     def _win_overwrite(self):

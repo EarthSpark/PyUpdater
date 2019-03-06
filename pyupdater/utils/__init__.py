@@ -30,7 +30,6 @@ import json
 import os
 import shutil
 import subprocess
-import tarfile
 import zipfile
 try:
     from UserDict import DictMixin
@@ -211,8 +210,7 @@ def get_size_in_bytes(filename):
 
 
 def create_asset_archive(name, version):
-    """Used to make archives of file or dir. Zip on windows and tar.gz
-    on all other platforms
+    """Used to make archives of file or dir. Zip on all platforms
 
     Args:
         name - Name to rename binary.
@@ -226,28 +224,18 @@ def create_asset_archive(name, version):
     filename = '{}-{}-{}'.format(os.path.splitext(name)[0],
                                  system.get_system(), version)
 
-    # Only use zip on windows.
-    # Zip does not preserve file permissions on nix & mac
+    # Use zip on all systems, tar.gz does not allow for small binary diffs
+    output_filename = filename + '.zip'
     with paths.ChDir(file_dir):
-        if system.get_system() == 'win':
-            ext = '.zip'
-            with zipfile.ZipFile(filename + ext, 'w') as zf:
-                zf.write(name, name)
-        else:
-            ext = '.tar.gz'
-            with paths.ChDir(file_dir):
-                with tarfile.open(filename + ext, 'w:gz',
-                                  compresslevel=0) as tar:
-                    tar.add(name, name)
+        with zipfile.ZipFile(output_filename, 'w') as zf:
+            zf.write(name, name)
 
-    output_filename = filename + ext
     log.debug('Archive output filename: %s', output_filename)
     return output_filename
 
 
 def make_archive(name, target, version):
-    """Used to make archives of file or dir. Zip on windows and tar.gz
-    on all other platforms
+    """Used to make archives of file or dir. Zip on all platforms
 
     Args:
         name - Name to rename binary.
@@ -288,13 +276,10 @@ def make_archive(name, target, version):
     file_dir = os.path.dirname(os.path.abspath(target))
     filename = '{}-{}-{}'.format(os.path.splitext(name)[0],
                                  system.get_system(), version)
-    # Only use zip on windows.
-    # Zip does not preserve file permissions on nix & mac
-    # tar.gz creates full file path
+
+    # Use zip on all systems, tar.gz does not allow for small binary diffs
     with paths.ChDir(file_dir):
-        ext = 'gztar'
-        if system.get_system() == 'win':
-            ext = 'zip'
+        ext = 'zip'
         output_filename = shutil.make_archive(filename, ext,
                                               file_dir, temp_file)
 
